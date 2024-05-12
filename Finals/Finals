@@ -1,0 +1,136 @@
+import random
+
+# File paths
+user_data_file = "users.txt"
+game_data_file = "game_records.txt"
+
+# Function to show the main menu
+def main_menu():
+    print("\nMain Menu:")
+    print("1. Register")
+    print("2. Login")
+    print("3. Exit")
+
+# Function for user registration
+def register_user():
+    print("\nRegistration:")
+    username = input("Enter username (at least 4 characters): ")
+    if len(username) < 4:
+        print("Username must be at least 4 characters.")
+        return
+    password = input("Enter password (8 characters): ")
+    if len(password) != 8:
+        print("Password must be 8 characters.")
+        return
+
+    with open(user_data_file, "a+") as file:
+        file.seek(0)
+        if any(username in line for line in file):
+            print("Username already exists. Please choose a different one.")
+        else:
+            file.write(f"{username},{password}\n")
+            print("Registration successful.")
+
+# Function for user login
+def login_user():
+    print("\nLogin:")
+    username = input("Enter username: ")
+    password = input("Enter password: ")
+
+    with open(user_data_file, "r") as file:
+        for line in file:
+            saved_username, saved_password = line.strip().split(",")
+            if username == saved_username and password == saved_password:
+                print(f"Welcome, {username}!")
+                return True, username
+    print("Invalid username or password.")
+    return False, None
+
+# Function for dice roll
+def roll_dice():
+    return random.randint(1, 6)
+
+# Function to play a game
+def play_game(username):
+    print("\nGame Started!")
+    total_points = 0
+    stages_won = 0
+
+    while True:
+        choice = input("\nPress 1 to roll the dice, 0 to stop: ")
+        if choice == "1":
+            player_roll = roll_dice()
+            computer_roll = roll_dice()
+            print(f"You rolled: {player_roll}, Computer rolled: {computer_roll}")
+
+            if player_roll > computer_roll:
+                total_points += 1
+                print("You win this round!")
+            elif player_roll < computer_roll:
+                print("Computer wins this round!")
+            else:
+                print("It's a tie! Roll again.")
+
+            if total_points % 3 == 0 and total_points > 0:
+                stages_won += 1
+                print(f"\nYou won Stage {stages_won}!")
+                print(f"Total Points: {total_points}, Stages Won: {stages_won}")
+                choice = input("Press 1 to continue to next stage, 0 to stop: ")
+                if choice == "0":
+                    break
+                else:
+                    total_points += 3
+
+        elif choice == "0":
+            print("Game Over. You didn't win any stages.")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+    if stages_won > 0:
+        with open(game_data_file, "a+") as file:
+            file.write(f"{username},{total_points}\n")
+
+# Function to show top scores
+def show_top_scores():
+    try:
+        with open(game_data_file, "r") as file:
+            scores = [line.strip().split(",") for line in file]
+            scores.sort(key=lambda x: int(x[1]), reverse=True)
+            print("\nTop 10 Scores:")
+            for i, score in enumerate(scores[:10]):
+                print(f"{i+1}. {score[0]} - {score[1]} points")
+    except FileNotFoundError:
+        print("No scores yet.")
+
+# Main program loop
+while True:
+    main_menu()
+    choice = input("Enter your choice: ")
+
+    if choice == "1":
+        register_user()
+    elif choice == "2":
+        logged_in, username = login_user()
+        if logged_in:
+            while True:
+                print("\nUser Menu:")
+                print("1. Play Game")
+                print("2. Show Top Scores")
+                print("3. Logout")
+                user_choice = input("Enter your choice: ")
+
+                if user_choice == "1":
+                    play_game(username)
+                elif user_choice == "2":
+                    show_top_scores()
+                elif user_choice == "3":
+                    print("Logging out.")
+                    break
+                else:
+                    print("Invalid choice. Please try again.")
+    elif choice == "3":
+        print("Exiting the game.")
+        break
+    else:
+        print("Invalid choice. Please try again.")
